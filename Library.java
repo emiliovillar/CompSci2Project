@@ -1,80 +1,90 @@
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.FileReader;
+
 
 public class Library {
+    private static final String OPENING_HOURS = "Libraries are open daily from 9am to 5pm.";
     private String address;
-    private Map<String, Integer> catalog;
-    private List<String> openingHours;
+    private List<Book> catalog;
+    private List<Book> borrowedBooks = new ArrayList<>();
+    String relativePath = "catalog.csv";
+
+
 
     public Library(String address) {
         this.address = address;
-        this.catalog = new HashMap<>();
-        this.openingHours = new ArrayList<>();
-        initializeOpeningHours();
+        this.catalog = new ArrayList<>();
     }
 
     public Library(String address, String catalogFile) {
         this(address);
-        loadCatalogFromFile(catalogFile);
+        importCatalogFromFile(catalogFile);
     }
 
     public void addBook(Book book) {
-        catalog.put(book.getTitle(), catalog.getOrDefault(book.getTitle(), 0) + 1);
+        catalog.add(book);
     }
 
     public void borrowBook(String title) {
-        if (catalog.containsKey(title) && catalog.get(title) > 0) {
-            System.out.println("You successfully borrowed " + title + ", remaining number of copies: " + (catalog.get(title) - 1));
-            catalog.put(title, catalog.get(title) - 1);
+        Book bookToBorrow = findBook(title);
+
+        if (bookToBorrow != null) {
+            catalog.remove(bookToBorrow);
+            borrowedBooks.add(bookToBorrow);
+            System.out.println("You successfully borrowed " + title + "remaining number of copies: " + getRemainingCopies(title));
         } else {
-            System.out.println("Sorry, this book is not in our catalog.");
+            System.out.println("Book not available for borrowing: " + title);
         }
     }
 
     public void returnBook(String title) {
-        catalog.put(title, catalog.getOrDefault(title, 0) + 1);
-        System.out.println("You successfully returned " + title + ", remaining number of copies: " + catalog.get(title));
+        catalog.add(new Book(title));
+
+        System.out.println("You successfully returned " + title + ", remaining number of copies: " + getRemainingCopies(book.getTitle()));
     }
 
     public void printAvailableBooks() {
-        if (catalog.isEmpty()) {
-            System.out.println("No book in catalog");
-        } else {
-            for (Map.Entry<String, Integer> entry : catalog.entrySet()) {
-                System.out.println(entry.getKey() + ", remaining number of copies: " + entry.getValue());
-            }
+        for (Book book : catalog) {
+            System.out.println(book.getTitle() + ", remaining number of copies: " + getRemainingCopies(book.getTitle()));
         }
     }
-
-    public static void printOpeningHours() {
-        System.out.println("Libraries are open daily from 9am to 5pm.");
+    private long getRemainingCopies(String title) {
+        return catalog.stream().filter(b -> b.getTitle().equals(title)).count();
     }
 
+    private Book findBook(String title) {
+        return catalog.stream().filter(b -> b.getTitle().equals(title)).findFirst().orElse(null);
+    }
     public void printAddress() {
         System.out.println(address);
     }
 
-    private void initializeOpeningHours() {
-        openingHours.add("Monday: 9am to 5pm");
-        openingHours.add("Tuesday: 9am to 5pm");
-        openingHours.add("Wednesday: 9am to 5pm");
-        openingHours.add("Thursday: 9am to 5pm");
-        openingHours.add("Friday: 9am to 5pm");
-        openingHours.add("Saturday: 9am to 1pm");
-        openingHours.add("Sunday: Closed");
+    public static void printOpeningHours() {
+        System.out.println(OPENING_HOURS);
     }
 
-    private void loadCatalogFromFile(String catalogFile) {
-        // Implementation to load catalog from a file goes here
-        // For simplicity, this method is left empty in this example
+    private void importCatalogFromFile(String catalogFile) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(catalogFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String title = line.trim();
+                addBook(new Book(title));
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading catalog file: " + e.getMessage());
+        }
     }
+
+
+
 
     public static void main(String[] args) {
         Library firstLibrary = new Library("10 Main St.");
         Library secondLibrary = new Library("228 Liberty St.");
-        Library thirdLibrary = new Library("12 Broadway St.", "catalog.txt");
+        Library thirdLibrary = new Library("12 Broadway St.", "catalog.csv");
 
         firstLibrary.addBook(new Book("The Da Vinci Code"));
         firstLibrary.addBook(new Book("The Da Vinci Code")); // second copy
@@ -103,6 +113,7 @@ public class Library {
         System.out.println("Books available in the first library:");
         firstLibrary.printAvailableBooks();
         System.out.println();
+
         System.out.println("Books available in the second library:");
         secondLibrary.printAvailableBooks();
         System.out.println("Books available in the third library:");

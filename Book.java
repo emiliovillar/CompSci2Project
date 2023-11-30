@@ -4,9 +4,9 @@ public class Book {
     boolean borrowed;
 
     // Creates a new Book
-    public Book(String bookTitle) {
+    public Book(String title) {
         // Implement this method
-        this.title = bookTitle;
+        this.title = title;
         this.borrowed = false;
 
     }
