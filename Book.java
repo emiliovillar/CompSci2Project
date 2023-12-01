@@ -2,6 +2,7 @@ public class Book {
 
     String title;
     boolean borrowed;
+    private int numCopies;
 
     // Creates a new Book
     public Book(String title) {
@@ -34,6 +35,13 @@ public class Book {
     public String getTitle() {
         // Implement this method
         return title;
+    }
+    public void incrementCopies() {
+        numCopies++;
+    }
+
+    public int getNumCopies() {
+        return numCopies;
     }
 
     public static void main(String[] arguments) {

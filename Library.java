@@ -10,7 +10,7 @@ public class Library {
     private String address;
     private List<Book> catalog;
     private List<Book> borrowedBooks = new ArrayList<>();
-    String relativePath = "catalog.csv";
+    String catalogFile = "Users/evill052/Downloads/catalog.csv";
 
 
 
@@ -25,10 +25,18 @@ public class Library {
     }
 
     public void addBook(Book book) {
-        catalog.add(book);
+        //add book to catalog or increment num of copies if there
+        Book existingBook = findBook(book.getTitle());
+
+        if (existingBook == null) {
+            catalog.add(book);
+        } else {
+            existingBook.incrementCopies();
+        }
     }
 
     public void borrowBook(String title) {
+        //borrow from catalog, add to borrowe books
         Book bookToBorrow = findBook(title);
 
         if (bookToBorrow != null) {
@@ -41,19 +49,31 @@ public class Library {
     }
 
     public void returnBook(String title) {
-        catalog.add(new Book(title));
+        Book returnedBook = borrowedBooks.stream().filter(b -> b.getTitle().equals(title)).findFirst().orElse(null);
 
-        System.out.println("You successfully returned " + title + ", remaining number of copies: " + getRemainingCopies(book.getTitle()));
+        if (returnedBook != null) {
+            catalog.add(returnedBook);
+            borrowedBooks.remove(returnedBook);
+            System.out.println("You successfully returned " + title + ", remaining number of copies: " + getRemainingCopies(title));
+        } else {
+            System.out.println("Book not found in borrowed books: " + title);
+        }
     }
+
 
     public void printAvailableBooks() {
         for (Book book : catalog) {
             System.out.println(book.getTitle() + ", remaining number of copies: " + getRemainingCopies(book.getTitle()));
         }
     }
+
     private long getRemainingCopies(String title) {
-        return catalog.stream().filter(b -> b.getTitle().equals(title)).count();
+        long availableCopies = catalog.stream().filter(b -> b.getTitle().equals(title)).count();
+        long borrowedCopies = borrowedBooks.stream().filter(b -> b.getTitle().equals(title)).count();
+        return Math.max(availableCopies - borrowedCopies, 0);
     }
+
+
 
     private Book findBook(String title) {
         return catalog.stream().filter(b -> b.getTitle().equals(title)).findFirst().orElse(null);
@@ -67,12 +87,17 @@ public class Library {
     }
 
     private void importCatalogFromFile(String catalogFile) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(catalogFile))) {
+        try {
+            //test where directory is to make sure that file is there
+            //System.out.println("Working Directory = " + System.getProperty("user.dir"));
+
+            BufferedReader reader = new BufferedReader(new FileReader(catalogFile));
             String line;
             while ((line = reader.readLine()) != null) {
                 String title = line.trim();
                 addBook(new Book(title));
             }
+            reader.close();
         } catch (IOException e) {
             System.err.println("Error reading catalog file: " + e.getMessage());
         }
